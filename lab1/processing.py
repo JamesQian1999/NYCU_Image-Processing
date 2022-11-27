@@ -127,7 +127,7 @@ def his_equl(args, img):
 def power_transformation(arg, img, gamma = 1.5, c = 1.):
     img = img.astype('float64') / 255.0
     img = c * np.power(img, gamma)
-    save_img(args, img, 'power_transformation' )
+    save_img(arg, img, 'power_transformation' )
 
     return img
 
@@ -159,7 +159,7 @@ def gradients(arg, img):
         img = w + h
         img = to01(img)
 
-    save_img(args, img, 'gradients' )
+    save_img(arg, img, 'gradients' )
 
     return img
 
@@ -167,7 +167,7 @@ def gradients(arg, img):
 def median_filter(arg, img, kernel = 3):
     if arg.g:
         img = median(img, kernel)
-        save_img(args, img, 'median_filter' )
+        save_img(arg, img, 'median_filter' )
         return img
     else:
         output = []
@@ -175,17 +175,38 @@ def median_filter(arg, img, kernel = 3):
             output.append(median(img[:,:,i], kernel))
 
         img = np.stack((output[0], output[1], output[2]), axis=2)
-        save_img(args, img/255, 'median_filter' )
+        save_img(arg, img/255, 'median_filter' )
         return img
 
 
-def threshold(img, threshold ):
+def threshold(arg, img, threshold ):
     idx = img > threshold
     img[idx] = 255
     idx = img <= threshold
     img[idx] = 0
 
-    save_img(args, img/255, 'threshold' )
+    save_img(arg, img/255, 'threshold' )
+    return img
+
+def gaussian_blur(arg, img, it):
+    kernel = np.array(
+        [[   1,  4,  7,  4,  1], 
+         [   4, 16, 26, 16,  4], 
+         [   7, 26, 41, 26,  7],
+         [   4, 16, 26, 16,  4],
+         [   1,  4,  7,  4,  1], ]
+    ) /273.
+    
+    if arg.g:
+        img = conv(img, kernel, padding = 2)
+        save_img(arg, img, 'gaussian_blur_' + str(it) )
+    else:
+        img[:,:,0] = conv(img[:,:,0], kernel, padding = 2)
+        img[:,:,1] = conv(img[:,:,1], kernel, padding = 2)
+        img[:,:,2] = conv(img[:,:,2], kernel, padding = 2)
+
+        save_img(arg, img/img.max(), 'gaussian_blur_' + str(it) )
+
     return img
 
 if __name__ == '__main__':
@@ -210,6 +231,10 @@ if __name__ == '__main__':
     for i in range(3):
         img = median_filter(args, img)
 
-    threshold(test, (test.max()+test.min())/2)
+    threshold(args, test, (test.max()+test.min())/2)
     gradients(args, test)
+
+    tmp = img.copy()
+    for i in range(1,11):
+        tmp = gaussian_blur(args, test, i)
 
