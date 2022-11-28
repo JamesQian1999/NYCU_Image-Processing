@@ -12,16 +12,17 @@ def dataloader(dir_name = 'data'):
     return imgs
 
 
-def visualize_part(imgs, format = 'gray' ):
+def visualize_part(imgs, name = 'img'):
     plt.figure(figsize=(15, 20))
     for i, img in enumerate(imgs):
         plt.subplot(int(len(imgs)//2+1), 2, int(i+1//2+1))
-        plt.imshow(img, format)
+        plt.imshow(img, 'gray')
 
-    plt.show()
+    # plt.show()
+    plt.savefig(name + '.png', dpi=500)
 
 
-def visualize(imgs, images_original, format = 'gray', lowthreshold = 0.4, highthreshold = 0.7):
+def visualize(imgs, images_original, format = 'gray', lowthreshold = 0.4, highthreshold = 0.7, name = 'img'):
     plt.figure(figsize=(50, 50))
 
     for i, img in enumerate(zip(images_original, imgs)):
@@ -37,18 +38,18 @@ def visualize(imgs, images_original, format = 'gray', lowthreshold = 0.4, highth
         plt.subplot(len(imgs), 3, plt_idx)
         plt.imshow(cv2.Canny(img[0], lowthreshold * 255, highthreshold * 255), format)
 
-    plt.show()
+    # plt.show()
+    plt.savefig(name + '.png', dpi=500)
 
 
 class cannyEdgeDetector:
-    def __init__(self, imgs, lowthreshold=0.12, highthreshold=0.15):
+    def __init__(self, lowthreshold=0.12, highthreshold=0.15):
         self.weak_pixel     = 100
         self.strong_pixel   = 255
         self.lowThreshold   = lowthreshold
         self.highThreshold  = highthreshold
-        self.imgs           = imgs
         self.imgs_final     = []
-        self.img_smoothed   = []
+        self.smoothedImg    = []
         self.gradient       = []
         self.theta          = []
         self.nonMaxImg      = []
@@ -72,7 +73,8 @@ class cannyEdgeDetector:
         return new_image
 
 
-    def gaussian_kernel(self):
+    def gaussian_filters(self, img):
+
         kernel = np.array(
             [[ 1,  4,  7,  4,  1], 
              [ 4, 16, 26, 16,  4], 
@@ -80,8 +82,10 @@ class cannyEdgeDetector:
              [ 4, 16, 26, 16,  4],
              [ 1,  4,  7,  4,  1] ]
         ) /273.
-        return kernel
+
+        return self.conv(img, kernel, padding = 2)
     
+
     def sobel_filters(self, img):
 
         kernel_x = np.array([[-1, 0, 1], 
@@ -102,7 +106,7 @@ class cannyEdgeDetector:
 
     def non_max_suppression(self, img, angle):
         x, y    = img.shape
-        new_img = np.zeros((x,y))
+        output = np.zeros((x,y))
         angle   = angle * 180. / np.pi
         angle[angle < 0] += 180
 
@@ -130,11 +134,11 @@ class cannyEdgeDetector:
 
 
                 if (img[i,j] >= front) and (img[i,j] >= back):
-                    new_img[i,j] = img[i,j]
+                    output[i,j] = img[i,j]
                 else:
-                    new_img[i,j] = 0
+                    output[i,j] = 0
 
-        return new_img
+        return output
 
 
     def threshold(self, img):
@@ -171,10 +175,10 @@ class cannyEdgeDetector:
         return img
     
 
-    def detect(self):
-        for img in self.imgs: 
-            self.img_smoothed.append(self.conv(img, self.gaussian_kernel(), padding = 2))
-            gradient, theta  = self.sobel_filters(self.img_smoothed[-1])
+    def detect(self, imgs):
+        for img in imgs: 
+            self.smoothedImg.append(self.gaussian_filters(img))
+            gradient, theta  = self.sobel_filters(self.smoothedImg[-1])
             self.gradient.append(gradient)
             self.theta.append(theta)
             self.nonMaxImg.append(self.non_max_suppression(self.gradient[-1], self.theta[-1]))
@@ -186,11 +190,11 @@ class cannyEdgeDetector:
 
 if __name__ == '__main__':
     images_original = dataloader()
-    detector = cannyEdgeDetector(images_original, lowthreshold = 0.10, highthreshold = 0.15)
-    imgs_final = detector.detect()
+    detector = cannyEdgeDetector(lowthreshold = 0.10, highthreshold = 0.15)
+    imgs_final = detector.detect(images_original)
     visualize(imgs_final, images_original, lowthreshold = 0.5, highthreshold = 0.8)
 
-    visualize_part(detector.img_smoothed)
-    visualize_part(detector.nonMaxImg)
-    visualize_part(detector.thresholdImg)
-    visualize_part(detector.imgs_final)
+    visualize_part(detector.smoothedImg, 'smoothedImg')
+    visualize_part(detector.nonMaxImg, 'nonMaxImg')
+    visualize_part(detector.thresholdImg, 'thresholdImg')
+    visualize_part(detector.imgs_final, 'imgs_final')
