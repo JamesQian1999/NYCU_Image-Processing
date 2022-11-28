@@ -88,14 +88,20 @@ class cannyEdgeDetector:
 
     def sobel_filters(self, img):
 
-        kernel_x = np.array([[-1, 0, 1], 
-                             [-2, 0, 2], 
-                             [-1, 0, 1]])
+        # kernel_x = np.array([[-1, 0, 1], 
+        #                      [-2, 0, 2], 
+        #                      [-1, 0, 1]])
+        kernel_x = np.array([[np.sqrt(2)/(-4), 0, np.sqrt(2)/4], 
+                             [-1             , 0,            1], 
+                             [np.sqrt(2)/(-4), 0, np.sqrt(2)/4]])
         gradient_x = self.conv(img, kernel_x)
 
-        kernel_y = np.array([[ 1, 2, 1], 
-                             [ 0, 0, 0], 
-                             [-1,-2,-1]])
+        # kernel_y = np.array([[ 1, 2, 1], 
+        #                      [ 0, 0, 0], 
+        #                      [-1,-2,-1]])
+        kernel_y = np.array([[ np.sqrt(2)/4  ,  1,    np.sqrt(2)/4], 
+                             [              0,  0,               0], 
+                             [np.sqrt(2)/(-4), -1, np.sqrt(2)/(-4)]])
         gradient_y = self.conv(img, kernel_y)
 
         gradient = np.hypot(gradient_x, gradient_y)
@@ -192,9 +198,9 @@ if __name__ == '__main__':
     images_original = dataloader()
     detector = cannyEdgeDetector(lowthreshold = 0.10, highthreshold = 0.15)
     imgs_final = detector.detect(images_original)
-    visualize(imgs_final, images_original, lowthreshold = 0.5, highthreshold = 0.8)
+    visualize(imgs_final, images_original, lowthreshold = 0.5, highthreshold = 0.8, name = 'new')
 
-    visualize_part(detector.smoothedImg, 'smoothedImg')
-    visualize_part(detector.nonMaxImg, 'nonMaxImg')
-    visualize_part(detector.thresholdImg, 'thresholdImg')
-    visualize_part(detector.imgs_final, 'imgs_final')
+    # visualize_part(detector.smoothedImg, 'smoothedImg')
+    # visualize_part(detector.nonMaxImg, 'nonMaxImg')
+    # visualize_part(detector.thresholdImg, 'thresholdImg')
+    # visualize_part(detector.imgs_final, 'imgs_final')
